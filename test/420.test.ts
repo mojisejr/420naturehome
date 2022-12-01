@@ -1,5 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import { isGeneratorFunction } from "util/types";
 import { contracts } from "../typechain-types";
 
 describe("PayWay Contract test", async () => {
@@ -183,6 +184,7 @@ describe("PayWay Contract test", async () => {
     const list = await contract.getAllCustomers();
     expect(list.length).greaterThan(0);
   });
+
   it("should be able to get All Payment List", async () => {
     const { dev, w1, w2, w3, token, contract, items } = await deploy();
 
@@ -209,9 +211,38 @@ describe("PayWay Contract test", async () => {
     const list = await contract.getAllPayments();
     expect(list.length).greaterThan(0);
   });
+
+  it("should get all payments of specific wallet", async () => {
+    const { dev, w1, w2, w3, token, contract, items } = await deploy();
+
+    await token.connect(w1).approve(contract.address, items[0].ERC20price);
+    await contract
+      .connect(w1)
+      .payWithERC20(1, 1111, items[0].ERC20price, 1, "need packing");
+
+    await token.connect(w2).approve(contract.address, items[0].ERC20price);
+    await contract
+      .connect(w2)
+      .payWithERC20(1, 2222, items[0].ERC20price, 1, "need packing");
+
+    await token.connect(w1).approve(contract.address, items[0].ERC20price);
+    await contract
+      .connect(w1)
+      .payWithERC20(1, 1111, items[0].ERC20price, 1, "need packing");
+
+    const payments = await contract.getPaymentOf(w1.address);
+    expect(payments.length).to.equal(2);
+  });
+
   it("should be able to get  All Customer List", async () => {
     const { dev, w1, w2, w3, token, contract, items } = await deploy();
     const list = await contract.getAllItems();
     expect(list.length).greaterThan(0);
+  });
+
+  it("should get item by id", async () => {
+    const { dev, w1, w2, w3, token, contract, items } = await deploy();
+    const item = await contract.getItemsById(1);
+    expect(item[0].toString()).to.equal("Gorllia");
   });
 });
